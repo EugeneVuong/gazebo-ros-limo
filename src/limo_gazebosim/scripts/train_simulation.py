@@ -141,15 +141,6 @@ class TrainSimulation(Node):
         twist.angular = Vector3(x=0.0, y=0.0, z=0.0)
         self._set_state("simple", pose, twist)
 
-        # Set Inital State of Goal Model
-        pose = Pose()
-        pose.position = Point(x=GOAL_POSITION[0], y=GOAL_POSITION[1], z=0.0)
-        pose.orientation = Quaternion(x=0.0, y=0.0, z=0.0, w=1.0)
-        twist = Twist()
-        twist.linear = Vector3(x=0.0, y=0.0, z=0.0)
-        twist.angular = Vector3(x=0.0, y=0.0, z=0.0)
-        self._set_state("goal", pose, twist)
-
         
 
         
