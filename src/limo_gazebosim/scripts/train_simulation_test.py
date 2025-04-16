@@ -68,21 +68,18 @@ class ImuReader(Node):
         self.get_logger().info('IMU Data Received')
 
 class BumperCollisionDetector(Node):
-    def __init__(self):
-        super().__init__('bumper_collision_detector')
+    def __init__(self, topic_name, node_name):
+        super().__init__(node_name)
         self.subscription = self.create_subscription(
             ContactsState,
-            'bumper_states',
+            topic_name,
             self.contact_callback,
             10
         )
         self.curr_contact = None
 
     def contact_callback(self, msg):
-        # Save the complete contact states for later inspection.
         self.curr_contact = msg.states
-        self.get_logger().info("Received contact states: " + str(self.curr_contact))
-
 
 class TrainSimulation(Node):
     """ROS2 Node for simulation control with collision and flip checks."""
@@ -97,7 +94,11 @@ class TrainSimulation(Node):
         self.lidar_reader = LidarReader()
         self.image_reader = ImageReader()
         self.imu_reader = ImuReader()
-        self.bumper_reader = BumperCollisionDetector()  # Bumper (contact sensor) node
+        # Four bumper/contact sensor nodes for each wheel
+        self.front_left_bumper = BumperCollisionDetector('/front_left_wheel_contact', 'front_left_bumper')
+        self.front_right_bumper = BumperCollisionDetector('/front_right_wheel_contact', 'front_right_bumper')
+        self.rear_left_bumper = BumperCollisionDetector('/rear_left_wheel_contact', 'rear_left_bumper')
+        self.rear_right_bumper = BumperCollisionDetector('/rear_right_wheel_contact', 'rear_right_bumper')
 
     def step(self, action):
         # Publish the velocity command.
@@ -117,8 +118,11 @@ class TrainSimulation(Node):
         # Allow time for sensor updates.
         time.sleep(TIME_DELTA)
         
-        # Check for collision using the bumper sensor state by inspecting curr_contact.
-        rclpy.spin_once(self.bumper_reader, timeout_sec=0.2)
+        # Check for collision using all four bumper sensor states by inspecting curr_contact.
+        rclpy.spin_once(self.front_left_bumper, timeout_sec=0.2)
+        rclpy.spin_once(self.front_right_bumper, timeout_sec=0.2)
+        rclpy.spin_once(self.rear_left_bumper, timeout_sec=0.2)
+        rclpy.spin_once(self.rear_right_bumper, timeout_sec=0.2)
         collision = self._check_collision()
         
         # Check if the robot is flipped via the IMU.
@@ -153,25 +157,30 @@ class TrainSimulation(Node):
 
     def _check_collision(self):
         """
-        Check for a collision by inspecting the bumper sensor's curr_contact.
-        Returns True if any contact is not with 'ground_plane::link::collision'.
+        Check for a collision by inspecting all four wheel bumper sensors' curr_contact.
+        Returns True if collision detected with anything except ground plane.
+        Returns False if collision is with ground plane or no collision detected.
         """
-        rclpy.spin_once(self.bumper_reader, timeout_sec=0.2)
-        if self.bumper_reader.curr_contact is not None and len(self.bumper_reader.curr_contact) > 0:
-            for contact in self.bumper_reader.curr_contact:
-                # Each contact has collision1_name and collision2_name
+        bumpers = [
+            self.front_left_bumper,
+            self.front_right_bumper,
+            self.rear_left_bumper,
+            self.rear_right_bumper
+        ]
+        for bumper in bumpers:
+            rclpy.spin_once(bumper, timeout_sec=0.2)
+            if bumper.curr_contact is None or len(bumper.curr_contact) == 0:
+                continue  # No collision detected for this bumper
+            for contact in bumper.curr_contact:
                 if hasattr(contact, 'collision1_name') and hasattr(contact, 'collision2_name'):
-                    if contact.collision1_name != 'ground_plane::link::collision' and contact.collision2_name != 'ground_plane::link::collision':
-                        self.get_logger().warn("Collision detected via bumper sensor (not ground plane)!")
-                        self.get_logger().info("Current contacts: " + str(self.bumper_reader.curr_contact))
+                    # If either collision is with ground plane, this contact is not a real collision
+                    if contact.collision1_name == 'ground_plane::link::collision' or contact.collision2_name == 'ground_plane::link::collision':
+                        continue
+                    else:
+                        self.get_logger().warn(f"Collision detected via {bumper.get_name()}!")
+                        print(f"Collision1: {contact.collision1_name}, Collision2: {contact.collision2_name}")
                         return True
-                    elif contact.collision1_name != 'ground_plane::link::collision' or contact.collision2_name != 'ground_plane::link::collision':
-                        self.get_logger().warn("Collision detected via bumper sensor (not ground plane)!")
-                        self.get_logger().info("Current contacts: " + str(self.bumper_reader.curr_contact))
-                        return True
-            # All contacts are with ground plane
-            return False
-        return False
+        return False  # No non-ground collisions found
 
     def _check_flipped(self):
         rclpy.spin_once(self.imu_reader, timeout_sec=0.2)
@@ -194,37 +203,15 @@ class TrainSimulation(Node):
         return False
 
     def reset(self):
-        # Reset robot state.
-        pose_robot = Pose()
-        pose_robot.position = Point(x=0.0, y=0.0, z=0.1)
-        pose_robot.orientation = Quaternion(x=0.0, y=0.0, z=0.0, w=1.0)
-        twist_robot = Twist()
-        twist_robot.linear = Vector3(x=0.0, y=0.0, z=0.0)
-        twist_robot.angular = Vector3(x=0.0, y=0.0, z=0.0)
-        self._set_state("limo_gazebosim", pose_robot, twist_robot)
-
-        # Reset world model state.
-        pose_world = Pose()
-        pose_world.position = Point(x=-5.162810, y=-2.687440, z=0.0)
-        pose_world.orientation = Quaternion(x=0.0, y=0.0, z=0.0, w=1.0)
-        twist_world = Twist()
-        twist_world.linear = Vector3(x=0.0, y=0.0, z=0.0)
-        twist_world.angular = Vector3(x=0.0, y=0.0, z=0.0)
-        self._set_state("simple", pose_world, twist_world)
-        
-        while not self.unpause_client.wait_for_service(timeout_sec=1.0):
-            self.get_logger().info('Unpause Service Not Available, Trying Again...')
+        # Use the /reset_simulation service to reset the simulation.
+        reset_client = self.create_client(Empty, "/reset_simulation")
+        while not reset_client.wait_for_service(timeout_sec=1.0):
+            self.get_logger().info('Reset Simulation Service Not Available, Trying Again...')
         try:
-            self.unpause_client.call_async(Empty.Request())
+            reset_client.call_async(Empty.Request())
         except Exception as e:
-            self.get_logger().error(f"Failed to call /unpause_physics: {e}")
+            self.get_logger().error(f"Failed to call /reset_simulation: {e}")
         time.sleep(TIME_DELTA)
-        while not self.pause_client.wait_for_service(timeout_sec=1.0):
-            self.get_logger().info('Pause Service Not Available, Trying Again...')
-        try:
-            self.pause_client.call_async(Empty.Request())
-        except Exception as e:
-            self.get_logger().error(f"Failed to call /pause_physics: {e}")
 
 def main(args=None):
     rclpy.init(args=args)
@@ -234,7 +221,10 @@ def main(args=None):
     executor.add_node(env.lidar_reader)
     executor.add_node(env.image_reader)
     executor.add_node(env.imu_reader)
-    executor.add_node(env.bumper_reader)
+    executor.add_node(env.front_left_bumper)
+    executor.add_node(env.front_right_bumper)
+    executor.add_node(env.rear_left_bumper)
+    executor.add_node(env.rear_right_bumper)
 
     try:
         for episode in range(MAX_EPISODES):
@@ -257,7 +247,10 @@ def main(args=None):
         env.lidar_reader.destroy_node()
         env.image_reader.destroy_node()
         env.imu_reader.destroy_node()
-        env.bumper_reader.destroy_node()
+        env.front_left_bumper.destroy_node()
+        env.front_right_bumper.destroy_node()
+        env.rear_left_bumper.destroy_node()
+        env.rear_right_bumper.destroy_node()
         rclpy.shutdown()
 
 if __name__ == "__main__":

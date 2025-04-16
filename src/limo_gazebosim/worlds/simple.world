@@ -1,16 +1,17 @@
-<sdf version='1.7'>
-  <world name='default'>
-    <plugin name='set_entity_state_plugin' filename='libset_entity_state.so'>
+<?xml version="1.0"?>
+<sdf version="1.7">
+  <world name="default">
+    <plugin name="set_entity_state_plugin" filename="libset_entity_state.so">
       <robot_name>my_robot</robot_name>
     </plugin>
-    <plugin name='gazebo_ros_state' filename='libgazebo_ros_state.so'>
+    <plugin name="gazebo_ros_state" filename="libgazebo_ros_state.so">
       <ros>
         <argument>model_states:=model_states_demo</argument>
       </ros>
       <update_rate>1.0</update_rate>
     </plugin>
 
-    <light name='sun' type='directional'>
+    <light name="sun" type="directional">
       <cast_shadows>0</cast_shadows>
       <pose>0 0 10 0 -0 0</pose>
       <diffuse>0.8 0.8 0.8 1</diffuse>
@@ -28,10 +29,11 @@
         <falloff>0</falloff>
       </spot>
     </light>
-    <model name='ground_plane'>
+
+    <model name="ground_plane">
       <static>1</static>
-      <link name='link'>
-        <collision name='collision'>
+      <link name="link">
+        <collision name="collision">
           <geometry>
             <plane>
               <normal>0 0 1</normal>
@@ -56,7 +58,7 @@
           </surface>
           <max_contacts>10</max_contacts>
         </collision>
-        <visual name='visual'>
+        <visual name="visual">
           <cast_shadows>0</cast_shadows>
           <geometry>
             <plane>
@@ -76,29 +78,9 @@
         <kinematic>0</kinematic>
       </link>
     </model>
-    <physics type='ode'>
-      <max_step_size>0.01</max_step_size>
-      <real_time_factor>1</real_time_factor>
-      <real_time_update_rate>100</real_time_update_rate>
-    </physics>
-    <gravity>0 0 -9.8</gravity>
-    <magnetic_field>6e-06 2.3e-05 -4.2e-05</magnetic_field>
-    <atmosphere type='adiabatic'/>
-    <scene>
-      <ambient>0.4 0.4 0.4 1</ambient>
-      <background>0.7 0.7 0.7 1</background>
-      <shadows>1</shadows>
-    </scene>
-    <wind/>
-    <spherical_coordinates>
-      <surface_model>EARTH_WGS84</surface_model>
-      <latitude_deg>0</latitude_deg>
-      <longitude_deg>0</longitude_deg>
-      <elevation>0</elevation>
-      <heading_deg>0</heading_deg>
-    </spherical_coordinates>
-    <model name='simple'>
-      <link name='link_0'>
+
+    <model name="simple">
+      <link name="link_0">
         <inertial>
           <mass>100</mass>
           <inertia>
@@ -116,7 +98,7 @@
         <self_collide>0</self_collide>
         <kinematic>0</kinematic>
         <enable_wind>0</enable_wind>
-        <visual name='visual'>
+        <visual name="visual">
           <pose>0 0 0 0 -0 0</pose>
           <geometry>
             <mesh>
@@ -130,7 +112,7 @@
               <uri>file://media/materials/scripts/gazebo.material</uri>
               <name>Gazebo/Grey</name>
             </script>
-            <shader type='pixel'>
+            <shader type="pixel">
               <normal_map>__default__</normal_map>
             </shader>
             <ambient>0.3 0.3 0.3 1</ambient>
@@ -141,7 +123,7 @@
           <transparency>0</transparency>
           <cast_shadows>1</cast_shadows>
         </visual>
-        <collision name='collision'>
+        <collision name="collision">
           <laser_retro>0</laser_retro>
           <max_contacts>10</max_contacts>
           <pose>0 0 0 0 -0 0</pose>
@@ -176,8 +158,8 @@
             </bounce>
             <contact>
               <collide_without_contact>0</collide_without_contact>
-              <collide_without_contact_bitmask>1</collide_without_contact_bitmask>
-              <collide_bitmask>1</collide_bitmask>
+              <collide_without_contact_bitmask>65535</collide_without_contact_bitmask>
+              <collide_bitmask>65535</collide_bitmask>
               <ode>
                 <soft_cfm>0</soft_cfm>
                 <soft_erp>0.2</soft_erp>
@@ -202,41 +184,65 @@
       <allow_auto_disable>0</allow_auto_disable>
       <pose>0 0 0 0 -0 0</pose>
     </model>
-    <state world_name='default'>
+
+    <state world_name="default">
       <sim_time>6 850000000</sim_time>
       <real_time>6 862940580</real_time>
       <wall_time>1653362198 155193887</wall_time>
       <iterations>685</iterations>
-      <model name='simple'>
+      <model name="simple">
         <pose>-5.16281 -2.68744 0 0 -0 0</pose>
         <scale>1 1 1</scale>
-        <link name='link_0'>
+        <link name="link_0">
           <pose>-5.16281 -2.68744 0 1.57 -0 0</pose>
           <velocity>0 0 0 0 -0 0</velocity>
           <acceleration>0 0 0 0 -0 0</acceleration>
           <wrench>0 0 0 0 -0 0</wrench>
         </link>
       </model>
-      <model name='ground_plane'>
+      <model name="ground_plane">
         <pose>0 0 0 0 -0 0</pose>
         <scale>1 1 1</scale>
-        <link name='link'>
+        <link name="link">
           <pose>0 0 0 0 -0 0</pose>
           <velocity>0 0 0 0 -0 0</velocity>
           <acceleration>0 0 0 0 -0 0</acceleration>
           <wrench>0 0 0 0 -0 0</wrench>
         </link>
       </model>
-      <light name='sun'>
+      <light name="sun">
         <pose>0 0 10 0 -0 0</pose>
       </light>
     </state>
-    <gui fullscreen='0'>
-      <camera name='user_camera'>
+
+    <gui fullscreen="0">
+      <camera name="user_camera">
         <pose>-3.32692 -7.64561 8.27127 -0 0.719643 1.3802</pose>
         <view_controller>orbit</view_controller>
         <projection_type>perspective</projection_type>
       </camera>
     </gui>
+    
+    <physics type="ode">
+      <max_step_size>0.01</max_step_size>
+      <real_time_factor>1</real_time_factor>
+      <real_time_update_rate>100</real_time_update_rate>
+    </physics>
+    <gravity>0 0 -9.8</gravity>
+    <magnetic_field>6e-06 2.3e-05 -4.2e-05</magnetic_field>
+    <atmosphere type="adiabatic"/>
+    <scene>
+      <ambient>0.4 0.4 0.4 1</ambient>
+      <background>0.7 0.7 0.7 1</background>
+      <shadows>1</shadows>
+    </scene>
+    <wind/>
+    <spherical_coordinates>
+      <surface_model>EARTH_WGS84</surface_model>
+      <latitude_deg>0</latitude_deg>
+      <longitude_deg>0</longitude_deg>
+      <elevation>0</elevation>
+      <heading_deg>0</heading_deg>
+    </spherical_coordinates>
   </world>
 </sdf>
