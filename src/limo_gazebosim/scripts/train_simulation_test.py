@@ -10,12 +10,18 @@ from std_srvs.srv import Empty
 from gazebo_msgs.srv import SetEntityState
 from gazebo_msgs.msg import EntityState, ContactsState
 from cv_bridge import CvBridge
+from nav_msgs.msg import Odometry
+from PPOAgent import PPOAgent
 
 # Constants
 TIME_DELTA = 0.2
-MAX_TIMESTEPS = 100
-MAX_EPISODES = 10
+MAX_TIMESTEPS = 50
+MAX_EPISODES = 500
 COLLISION_THRESHOLD = 0.55
+
+GOAL = [6.0, -2.0]
+# GOAL = [0, 0]
+
 
 class LidarReader(Node):
     def __init__(self):
@@ -30,7 +36,7 @@ class LidarReader(Node):
 
     def lidar_callback(self, msg):
         self.cur_scan = msg
-        self.get_logger().info('Lidar Data Received')
+
 
 class ImageReader(Node):
     def __init__(self):
@@ -65,7 +71,20 @@ class ImuReader(Node):
 
     def imu_callback(self, msg):
         self.cur_imu = msg
-        self.get_logger().info('IMU Data Received')
+
+class OdomReader(Node):
+    def __init__(self):
+        super().__init__('odom_reader')
+        self.subscription = self.create_subscription(
+            Odometry,
+            '/odom',
+            self.odom_callback,
+            10
+        )
+        self.cur_odom = None
+
+    def odom_callback(self, msg):
+        self.cur_odom = msg
 
 class BumperCollisionDetector(Node):
     def __init__(self, topic_name, node_name):
@@ -94,11 +113,52 @@ class TrainSimulation(Node):
         self.lidar_reader = LidarReader()
         self.image_reader = ImageReader()
         self.imu_reader = ImuReader()
+        self.odom_reader = OdomReader()
         # Four bumper/contact sensor nodes for each wheel
         self.front_left_bumper = BumperCollisionDetector('/front_left_wheel_contact', 'front_left_bumper')
         self.front_right_bumper = BumperCollisionDetector('/front_right_wheel_contact', 'front_right_bumper')
         self.rear_left_bumper = BumperCollisionDetector('/rear_left_wheel_contact', 'rear_left_bumper')
         self.rear_right_bumper = BumperCollisionDetector('/rear_right_wheel_contact', 'rear_right_bumper')
+
+    def get_distance_and_angle_to_goal(self, goal=GOAL):
+        """
+        Returns (distance, angle) from current position to goal.
+        Angle is relative to robot's heading (in radians).
+        """
+
+        rclpy.spin_once(self.odom_reader, timeout_sec=0.1)
+
+        odom = self.odom_reader.cur_odom
+        if odom is None:
+            self.get_logger().warn("No odometry data received yet!")
+            return None, None
+        # Current position
+        x = odom.pose.pose.position.x
+        y = odom.pose.pose.position.y
+        # Goal position
+        goal_x, goal_y = goal
+        # Distance
+        distance = math.hypot(goal_x - x, goal_y - y)
+        # Robot orientation (yaw)
+        q = odom.pose.pose.orientation
+        siny_cosp = 2 * (q.w * q.z + q.x * q.y)
+        cosy_cosp = 1 - 2 * (q.y * q.y + q.z * q.z)
+        yaw = math.atan2(siny_cosp, cosy_cosp)
+        # Angle to goal
+        angle_to_goal = math.atan2(goal_y - y, goal_x - x)
+        # Relative angle
+        angle = angle_to_goal - yaw
+        # Normalize angle to [-pi, pi]
+        angle = (angle + math.pi) % (2 * math.pi) - math.pi
+        return distance, angle
+
+    def get_lidar_data(self):
+        rclpy.spin_once(self.lidar_reader, timeout_sec=0.1)
+        scan = self.lidar_reader.cur_scan
+        if scan is None:
+            self.get_logger().warn("No LIDAR data received!")
+            return None
+        return list(scan.ranges)
 
     def step(self, action):
         # Publish the velocity command.
@@ -221,23 +281,60 @@ def main(args=None):
     executor.add_node(env.lidar_reader)
     executor.add_node(env.image_reader)
     executor.add_node(env.imu_reader)
+    executor.add_node(env.odom_reader)
     executor.add_node(env.front_left_bumper)
     executor.add_node(env.front_right_bumper)
     executor.add_node(env.rear_left_bumper)
     executor.add_node(env.rear_right_bumper)
 
+    # Initialize PPO agent with state_dim and action_dim
+    # Get initial lidar size
+    initial_lidar = env.get_lidar_data() or []
+    state_dim = 2 + len(initial_lidar)
+    action_dim = 2
+    agent = PPOAgent(state_dim, action_dim)
+
     try:
         for episode in range(MAX_EPISODES):
             env.reset()
             env.get_logger().info(f"Starting Episode: {episode}")
-            done = False
+
+            # initialize prev distance
+            prev_dist, _ = env.get_distance_and_angle_to_goal()
+            episode_reward = 0.0
             for timestep in range(MAX_TIMESTEPS):
+                # get current state
+                dist, ang = env.get_distance_and_angle_to_goal()
+                lidar = env.get_lidar_data() or []
+                state = [dist, ang] + lidar
+
+                # select action from agent
+                action = agent.select_action(state)
+
+                # perform step in environment
+                done = env.step(action)
+
+                # compute reward: encourage reducing distance
+                new_dist, _ = env.get_distance_and_angle_to_goal()
+                reward = prev_dist - new_dist
+                # big reward for reaching goal
+                if new_dist < 0.5:
+                    reward += 100.0
+                    done = True
+                # penalty for collision or flip
+                if done and new_dist >= 0.5:
+                    reward -= 10.0
+
+                agent.store_reward(reward, done)
+                episode_reward += reward
+                prev_dist = new_dist
+
                 if done:
                     break
-                linear_velocity = random.uniform(-5, 5)
-                angular_velocity = random.uniform(-5, 5)
-                done = env.step([linear_velocity, angular_velocity])
-            env.get_logger().info(f"Episode {episode} completed.")
+
+            # update PPO agent after each episode
+            agent.update()
+            env.get_logger().info(f"Episode {episode} completed. Total Reward: {episode_reward:.2f}")
     except KeyboardInterrupt:
         pass
     finally:
@@ -247,6 +344,7 @@ def main(args=None):
         env.lidar_reader.destroy_node()
         env.image_reader.destroy_node()
         env.imu_reader.destroy_node()
+        env.odom_reader.destroy_node()
         env.front_left_bumper.destroy_node()
         env.front_right_bumper.destroy_node()
         env.rear_left_bumper.destroy_node()
