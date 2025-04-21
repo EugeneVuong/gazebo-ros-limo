@@ -1,0 +1,121 @@
+# config/limo_bridge.yaml
+# Bridge configuration generated from limo_four_diff.sdf
+
+# Clock (Standard Gazebo Topic)
+- ros_topic_name: "/clock"
+  gz_topic_name: "/clock"
+  ros_type_name: "rosgraph_msgs/msg/Clock"
+  gz_type_name: "gz.msgs.Clock"
+  direction: GZ_TO_ROS
+
+# Joint States (from gz-sim-joint-state-publisher-system plugin)
+# The plugin publishes joint states within a Model message.
+- ros_topic_name: "/joint_states"
+  # Default Gazebo topic for this plugin relative to model
+  gz_topic_name: "/model/limo/joint_state"
+  ros_type_name: "sensor_msgs/msg/JointState"
+  gz_type_name: "gz.msgs.Model"
+  direction: GZ_TO_ROS
+
+# Odometry Message (from gz-sim-diff-drive-system plugin)
+- ros_topic_name: "/odom"
+  # Default Gazebo topic for this plugin relative to model
+  gz_topic_name: "/model/limo/odometry"
+  ros_type_name: "nav_msgs/msg/Odometry"
+  gz_type_name: "gz.msgs.Odometry"
+  direction: GZ_TO_ROS
+
+# Odometry TF (from gz-sim-diff-drive-system plugin)
+- ros_topic_name: "/tf"
+  # Default Gazebo topic for this plugin relative to model
+  gz_topic_name: "/model/limo/tf"
+  ros_type_name: "tf2_msgs/msg/TFMessage"
+  gz_type_name: "gz.msgs.Pose_V" # Bridge handles Pose_V -> TFMessage
+  direction: GZ_TO_ROS
+
+# Command Velocity (for gz-sim-diff-drive-system plugin)
+- ros_topic_name: "/cmd_vel"
+  # Default Gazebo topic for this plugin relative to model
+  gz_topic_name: "/model/limo/cmd_vel"
+  ros_type_name: "geometry_msgs/msg/Twist"
+  gz_type_name: "gz.msgs.Twist"
+  direction: ROS_TO_GZ
+
+# LaserScan (from laser sensor definition)
+- ros_topic_name: "/limo/scan"          # Topic defined in SDF sensor
+  gz_topic_name: "/limo/scan"           # Topic defined in SDF sensor
+  ros_type_name: "sensor_msgs/msg/LaserScan"
+  gz_type_name: "gz.msgs.LaserScan"
+  direction: GZ_TO_ROS
+
+# IMU (from imu sensor definition)
+- ros_topic_name: "/limo/imu"            # Topic defined in SDF sensor
+  gz_topic_name: "/limo/imu"            # Topic defined in SDF sensor
+  ros_type_name: "sensor_msgs/msg/Imu"
+  gz_type_name: "gz.msgs.IMU"
+  direction: GZ_TO_ROS
+
+# Depth Camera Image (from depth sensor definition)
+- ros_topic_name: "/limo/depth/image_raw" # Topic defined in SDF sensor
+  gz_topic_name: "/limo/depth/image_raw" # Topic defined in SDF sensor
+  ros_type_name: "sensor_msgs/msg/Image"
+  gz_type_name: "gz.msgs.Image"
+  direction: GZ_TO_ROS
+
+# Depth Camera Info (from depth sensor definition)
+- ros_topic_name: "/limo/depth/camera_info" # Topic defined in SDF sensor camera block
+  gz_topic_name: "/limo/depth/camera_info" # Topic defined in SDF sensor camera block
+  ros_type_name: "sensor_msgs/msg/CameraInfo"
+  gz_type_name: "gz.msgs.CameraInfo"
+  direction: GZ_TO_ROS
+
+# Color Camera Image (from camera sensor definition)
+- ros_topic_name: "/limo/color/image_raw"   # Topic defined in SDF sensor
+  gz_topic_name: "/limo/color/image_raw"   # Topic defined in SDF sensor
+  ros_type_name: "sensor_msgs/msg/Image"
+  gz_type_name: "gz.msgs.Image"
+  direction: GZ_TO_ROS
+
+# Color Camera Info (from camera sensor definition)
+- ros_topic_name: "/limo/color/camera_info" # Topic defined in SDF sensor camera block
+  gz_topic_name: "/limo/color/camera_info" # Topic defined in SDF sensor camera block
+  ros_type_name: "sensor_msgs/msg/CameraInfo"
+  gz_type_name: "gz.msgs.CameraInfo"
+  direction: GZ_TO_ROS
+
+# Point Cloud (Published by depth sensor - CHECK GZ TOPIC NAME)
+# The Gz topic name might differ, e.g., /world/<world>/model/limo/link/depth_camera_link/sensor/sensor_camera/points
+# Use 'gz topic -l' while sim is running to verify the exact topic name.
+- ros_topic_name: "/limo/depth/points"
+  gz_topic_name: "/world/default/model/limo/link/depth_camera_link/sensor/sensor_camera/points" # Example - VERIFY THIS TOPIC
+  ros_type_name: "sensor_msgs/msg/PointCloud2"
+  gz_type_name: "gz.msgs.PointCloudPacked"
+  direction: GZ_TO_ROS
+
+# Contact Sensor: Front Left Wheel (from contact sensor definition)
+# - ros_topic_name: "/limo/front_left_wheel_contact" # Topic defined in SDF sensor
+#   gz_topic_name: "/limo/front_left_wheel_contact" # Topic defined in SDF sensor
+#   ros_type_name: "ros_gz_interfaces/msg/Contact"  # Requires ros_gz_interfaces pkg
+#   gz_type_name: "gz.msgs.Contact"
+#   direction: GZ_TO_ROS
+
+# # Contact Sensor: Front Right Wheel (from contact sensor definition)
+# - ros_topic_name: "/limo/front_right_wheel_contact" # Topic defined in SDF sensor
+#   gz_topic_name: "/limo/front_right_wheel_contact" # Topic defined in SDF sensor
+#   ros_type_name: "ros_gz_interfaces/msg/Contact"   # Requires ros_gz_interfaces pkg
+#   gz_type_name: "gz.msgs.Contacts"
+#   direction: GZ_TO_ROS
+
+# # Contact Sensor: Rear Left Wheel (from contact sensor definition)
+# - ros_topic_name: "/limo/rear_left_wheel_contact" # Topic defined in SDF sensor
+#   gz_topic_name: "/limo/rear_left_wheel_contact" # Topic defined in SDF sensor
+#   ros_type_name: "ros_gz_interfaces/msg/Contact"   # Requires ros_gz_interfaces pkg
+#   gz_type_name: "gz.msgs.Contacts"
+#   direction: GZ_TO_ROS
+
+# # Contact Sensor: Rear Right Wheel (from contact sensor definition)
+# - ros_topic_name: "/limo/rear_right_wheel_contact" # Topic defined in SDF sensor
+#   gz_topic_name: "/limo/rear_right_wheel_contact" # Topic defined in SDF sensor
+#   ros_type_name: "ros_gz_interfaces/msg/Contact"   # Requires ros_gz_interfaces pkg
+#   gz_type_name: "gz.msgs.Contacts"
+#   direction: GZ_TO_ROS

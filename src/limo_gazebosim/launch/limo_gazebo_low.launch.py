@@ -11,15 +11,15 @@ from ament_index_python.packages import get_package_share_directory
 def generate_launch_description():
 
     # --- Constants ---
-    sdf_model_name = 'limo_four_diff.sdf' # Using SDF directly
+    sdf_model_name = 'limo_four_diff_low.sdf' # Using SDF directly
     world_file_name = 'test_zone.world'   # Your world file
     bridge_config_file_name = 'limo_bridge.yaml' # Bridge config is essential
 
-    robot_name_in_model = 'limo'
+    robot_name_in_model = 'limo_low'
 
     spawn_x_val = '0.0'
     spawn_y_val = '0.0'
-    spawn_z_val = '0.01'
+    spawn_z_val = '0.1'
 
     # --- Package Paths ---
     ros_gz_sim = get_package_share_directory('ros_gz_sim')
@@ -29,7 +29,7 @@ def generate_launch_description():
     default_sdf_model_path = os.path.join(
         pkg_limo_gazebosim,
         'models', # Assuming SDF is in description/urdf
-        'limo',
+        'limo_low',
         sdf_model_name
     )
     world_path = os.path.join(

@@ -1,0 +1,361 @@
+<?xml version="1.0"?>
+
+<sdf version="1.8">
+  <model name="limo">
+    <static>false</static>
+
+<!-- Base Footprint Link and Joint (Standard ROS Practice) -->
+<link name="base_footprint"/>
+<joint name="base_footprint_joint" type="fixed">
+  <parent>base_link</parent>
+  <child>base_footprint</child>
+  <pose>0.0 0.0 -0.15 0 0 0</pose>
+</joint>
+
+<!-- Base Link -->
+<link name="base_link">
+  <!-- Inertial merged from inertial_link -->
+  <inertial>
+    <pose>0 0 0 0 0 0</pose> <!-- Origin relative to link frame -->
+    <mass>2.1557</mass>
+    <inertia>
+      <ixx>0.24</ixx> <ixy>0</ixy> <ixz>0</ixz>
+      <iyy>0.96</iyy> <iyz>0</iyz>
+      <izz>0.96</izz>
+    </inertia>
+  </inertial>
+  <!-- Visual from base_link -->
+  <visual name="base_visual">
+    <!-- ***** REPLACED MESH WITH BOX ***** -->
+    <!-- Original pose kept -->
+    <pose>0 0 -0.15 0 0 1.57</pose>
+    <geometry>
+        <!-- Using collision box dimensions as a simple visual representation -->
+        <box>
+            <size>0.13 0.12 0.1</size>
+        </box>
+    </geometry>
+    <material>
+        <ambient>0.5 0.5 0.5 1</ambient>
+        <diffuse>0.7 0.7 0.7 1</diffuse>
+        <specular>0.1 0.1 0.1 1</specular>
+    </material>
+  </visual>
+  <!-- Collision from base_link -->
+  <collision name="base_collision">
+    <pose>0 0 0 0 0 0</pose>
+    <geometry>
+      <box>
+        <size>0.13 0.12 0.1</size> <!-- From base_x/y/z_size -->
+      </box>
+    </geometry>
+  </collision>
+</link>
+
+<!-- Laser Sensor -->
+<link name="laser_link">
+  <pose relative_to="base_link">0.103 0 -0.034 0 0 0</pose>
+  <inertial>
+    <mass>0.1</mass> <pose>0 0 0 0 0 0</pose>
+    <inertia> <ixx>1e-6</ixx> <iyy>1e-6</iyy> <izz>1e-6</izz> </inertia>
+  </inertial>
+  <visual name='laser_visual'>
+    <pose>0 0 0 0 0 0</pose>
+    <geometry> <cylinder> <radius>0.02</radius> <length>0.01</length> </cylinder> </geometry>
+    <material> <ambient>0.1 0.1 0.1 1</ambient> <diffuse>0.1 0.1 0.2 1</diffuse> </material>
+  </visual>
+  <collision name='laser_collision'>
+    <pose>0 0 0 0 0 0</pose>
+    <geometry> <cylinder> <radius>0.032</radius> <length>0.016</length> </cylinder> </geometry>
+  </collision>
+  <sensor name="laser" type="gpu_lidar">
+    <pose>0 0 0 0 0 0</pose> <always_on>true</always_on> <visualize>true</visualize> <update_rate>10</update_rate>
+    <topic>/limo/scan</topic> <gz_frame_id>laser_link</gz_frame_id>
+    <lidar>
+      <scan> <horizontal> <samples>120</samples> <resolution>1.0</resolution> <min_angle>-3.14159</min_angle> <max_angle>3.14159</max_angle> </horizontal> </scan>
+      <range> <min>0.3</min> <max>15.0</max> <resolution>0.015</resolution> </range>
+      <noise> <type>gaussian</type> <mean>0.0</mean> <stddev>0.01</stddev> </noise>
+    </lidar>
+  </sensor>
+</link>
+<joint type="fixed" name="laser_joint">
+  <parent>base_link</parent> <child>laser_link</child>
+</joint>
+
+<!-- Depth Camera Sensor -->
+<link name="depth_camera_link">
+  <pose relative_to="base_link">0.084 0 0.03 0 0 0</pose>
+  <inertial>
+    <mass>0.1</mass> <pose>0 0 0 0 0 0</pose>
+    <inertia> <ixx>1e-6</ixx> <iyy>1e-6</iyy> <izz>1e-6</izz> </inertia>
+  </inertial>
+  <visual name='depth_camera_visual'>
+    <pose>0 0 0 0 0 0</pose>
+    <geometry> <box> <size>0.02 0.06 0.015</size> </box> </geometry>
+    <material> <ambient>0.1 0.1 0.1 1</ambient> <diffuse>0.1 0.1 0.2 1</diffuse> </material>
+  </visual>
+  <collision name='depth_camera_collision'>
+    <pose>0 0 0 0 0 0</pose>
+    <geometry> <box> <size>0.02 0.06 0.015</size> </box> </geometry>
+  </collision>
+   <sensor name="sensor_camera" type="depth">
+     <pose>0 0 0 0 0 0</pose> <always_on>true</always_on> <update_rate>10.0</update_rate> <visualize>true</visualize>
+     <topic>/limo/depth/image_raw</topic> <gz_frame_id>depth_link</gz_frame_id>
+     <camera name="limo_camera">
+       <horizontal_fov>1.3962634</horizontal_fov>
+       <image> <width>640</width> <height>480</height> <format>R8G8B8</format> </image>
+       <clip> <near>0.001</near> <far>300</far> </clip>
+       <camera_info_topic>/limo/depth/camera_info</camera_info_topic>
+     </camera>
+   </sensor>
+    <sensor name="color_camera" type="camera">
+      <pose>0 0 0 0 0 0</pose> <always_on>true</always_on> <update_rate>10.0</update_rate> <visualize>false</visualize>
+      <topic>/limo/color/image_raw</topic> <gz_frame_id>depth_link</gz_frame_id>
+      <camera name="limo_color_camera">
+         <horizontal_fov>1.3962634</horizontal_fov>
+         <image> <width>640</width> <height>480</height> <format>R8G8B8</format> </image>
+         <clip> <near>0.02</near> <far>300</far> </clip>
+         <camera_info_topic>/limo/color/camera_info</camera_info_topic>
+      </camera>
+    </sensor>
+</link>
+<joint type="fixed" name="depth_camera_joint">
+  <parent>base_link</parent> <child>depth_camera_link</child>
+</joint>
+<!-- Optical Frame Link and Joint -->
+<link name="depth_link">
+     <pose relative_to="depth_camera_link">0 0 0 -1.570796 0 -1.570796</pose>
+     <inertial> <mass>1e-5</mass> <inertia> <ixx>1e-6</ixx> <iyy>1e-6</iyy> <izz>1e-6</izz> </inertia> </inertial>
+</link>
+<joint name="depth_camera_to_camera_joint" type="fixed">
+  <parent>depth_camera_link</parent> <child>depth_link</child>
+</joint>
+
+<!-- IMU Sensor -->
+<link name="imu_link">
+  <pose relative_to="base_link">0.0 0 -0.1 0 0 0</pose>
+  <inertial>
+    <mass>0.01</mass> <pose>0 0 0 0 0 0</pose>
+    <inertia> <ixx>1e-7</ixx> <iyy>1e-7</iyy> <izz>1e-7</izz> </inertia>
+  </inertial>
+  <sensor name="twr_imu" type="imu">
+    <pose>0 0 0 0 0 0</pose> <always_on>true</always_on> <update_rate>100</update_rate> <visualize>true</visualize>
+    <topic>/limo/imu</topic> <gz_frame_id>imu_link</gz_frame_id>
+    <imu>
+      <orientation_reference_frame>ENU</orientation_reference_frame>
+      <angular_velocity>
+        <x><noise type="gaussian"><mean>0.0</mean><stddev>2e-4</stddev></noise></x>
+        <y><noise type="gaussian"><mean>0.0</mean><stddev>2e-4</stddev></noise></y>
+        <z><noise type="gaussian"><mean>0.0</mean><stddev>2e-4</stddev></noise></z>
+      </angular_velocity>
+      <linear_acceleration>
+        <x><noise type="gaussian"><mean>0.0</mean><stddev>1.7e-2</stddev></noise></x>
+        <y><noise type="gaussian"><mean>0.0</mean><stddev>1.7e-2</stddev></noise></y>
+        <z><noise type="gaussian"><mean>0.0</mean><stddev>1.7e-2</stddev></noise></z>
+      </linear_acceleration>
+    </imu>
+  </sensor>
+</link>
+<joint type="fixed" name="imu_joint">
+  <parent>base_link</parent> <child>imu_link</child>
+</joint>
+
+<!-- Front Left Wheel -->
+<link name="front_left_wheel_link">
+  <pose relative_to="base_link">0.1 0.065 -0.10 0 0 0</pose>
+  <inertial>
+    <mass>0.5</mass> <pose>0 0 0 0 0 0</pose>
+    <inertia> <ixx>0.01055</ixx> <iyy>0.00075</iyy> <izz>0.01055</izz> </inertia>
+  </inertial>
+  <visual name="front_left_wheel_visual">
+    <!-- ***** REPLACED MESH WITH CYLINDER ***** -->
+    <!-- Using collision pose for visual alignment -->
+    <pose>0 0.0225 0 1.57 0 0</pose>
+    <geometry>
+        <!-- Using collision cylinder dimensions -->
+        <cylinder><length>0.045</length><radius>0.045</radius></cylinder>
+    </geometry>
+    <material>
+        <ambient>0.2 0.2 0.2 1</ambient>
+        <diffuse>0.3 0.3 0.3 1</diffuse>
+        <specular>0.01 0.01 0.01 1</specular>
+    </material>
+  </visual>
+  <collision name="front_left_wheel_link_collision">
+    <pose>0 0.0225 0 1.57 0 0</pose>
+    <geometry> <cylinder><length>0.045</length><radius>0.045</radius></cylinder> </geometry>
+    <surface>
+      <friction> <ode> <mu>100</mu> <mu2>100</mu2> <fdir1>1 0 0</fdir1> </ode> </friction>
+      <bounce> <restitution_coefficient>0</restitution_coefficient> <threshold>1e6</threshold> </bounce>
+      <contact> <ode> <kp>10000000.0</kp> <kd>1.0</kd> <min_depth>0.01</min_depth> </ode> </contact>
+    </surface>
+    <max_contacts>64</max_contacts>
+  </collision>
+  <sensor name="front_left_bumper" type="contact">
+     <always_on>true</always_on> <update_rate>50</update_rate> <visualize>true</visualize>
+     <topic>/limo/front_left_wheel_contact</topic> <gz_frame_id>front_left_wheel_link</gz_frame_id>
+     <contact> <collision>front_left_wheel_link_collision</collision> </contact>
+  </sensor>
+</link>
+<joint name="front_left_wheel" type="revolute">
+  <parent>base_link</parent> <child>front_left_wheel_link</child>
+  <axis> <xyz>0 1 0</xyz> <limit> <effort>20</effort> </limit> </axis>
+</joint>
+
+<!-- Front Right Wheel -->
+<link name="front_right_wheel_link">
+  <pose relative_to="base_link">0.1 -0.065 -0.10 3.14159 0 0</pose>
+  <inertial>
+    <mass>0.5</mass> <pose>0 0 0 0 0 0</pose>
+    <inertia> <ixx>0.01055</ixx> <iyy>0.00075</iyy> <izz>0.01055</izz> </inertia>
+  </inertial>
+  <visual name="front_right_wheel_visual">
+    <!-- ***** REPLACED MESH WITH CYLINDER ***** -->
+    <!-- Using collision pose for visual alignment -->
+    <pose>0 0.0225 0 1.57 0 0</pose>
+    <geometry>
+        <!-- Using collision cylinder dimensions -->
+        <cylinder><length>0.045</length><radius>0.045</radius></cylinder>
+    </geometry>
+    <material>
+        <ambient>0.2 0.2 0.2 1</ambient>
+        <diffuse>0.3 0.3 0.3 1</diffuse>
+        <specular>0.01 0.01 0.01 1</specular>
+    </material>
+  </visual>
+  <collision name="front_right_wheel_link_collision">
+     <pose>0 0.0225 0 1.57 0 0</pose>
+    <geometry> <cylinder><length>0.045</length><radius>0.045</radius></cylinder> </geometry>
+    <surface>
+      <friction> <ode> <mu>100</mu> <mu2>100</mu2> <fdir1>1 0 0</fdir1> </ode> </friction>
+      <bounce> <restitution_coefficient>0</restitution_coefficient> <threshold>1e6</threshold> </bounce>
+      <contact> <ode> <kp>10000000.0</kp> <kd>1.0</kd> <min_depth>0.01</min_depth> </ode> </contact>
+    </surface>
+     <max_contacts>64</max_contacts>
+  </collision>
+   <sensor name="front_right_bumper" type="contact">
+     <always_on>true</always_on> <update_rate>50</update_rate> <visualize>true</visualize>
+     <topic>/limo/front_right_wheel_contact</topic> <gz_frame_id>front_right_wheel_link</gz_frame_id>
+     <contact> <collision>front_right_wheel_link_collision</collision> </contact>
+   </sensor>
+</link>
+<joint name="front_right_wheel" type="revolute">
+  <parent>base_link</parent> <child>front_right_wheel_link</child>
+  <axis> <xyz>0 -1 0</xyz> <limit> <effort>20</effort> </limit> </axis>
+</joint>
+
+<!-- Rear Left Wheel -->
+<link name="rear_left_wheel_link">
+  <pose relative_to="base_link">-0.1 0.065 -0.10 0 0 0</pose>
+   <inertial>
+    <mass>0.5</mass> <pose>0 0 0 0 0 0</pose>
+    <inertia> <ixx>0.01055</ixx> <iyy>0.00075</iyy> <izz>0.01055</izz> </inertia>
+  </inertial>
+  <visual name="rear_left_wheel_visual">
+     <!-- ***** REPLACED MESH WITH CYLINDER ***** -->
+     <!-- Using collision pose for visual alignment -->
+    <pose>0 0.0225 0 1.57 0 0</pose>
+    <geometry>
+        <!-- Using collision cylinder dimensions -->
+        <cylinder><length>0.045</length><radius>0.045</radius></cylinder>
+    </geometry>
+    <material>
+        <ambient>0.2 0.2 0.2 1</ambient>
+        <diffuse>0.3 0.3 0.3 1</diffuse>
+        <specular>0.01 0.01 0.01 1</specular>
+    </material>
+  </visual>
+  <collision name="rear_left_wheel_link_collision">
+    <pose>0 0.0225 0 1.57 0 0</pose>
+    <geometry> <cylinder><length>0.045</length><radius>0.045</radius></cylinder> </geometry>
+    <surface>
+      <friction> <ode> <mu>100</mu> <mu2>100</mu2> <fdir1>1 0 0</fdir1> </ode> </friction>
+      <bounce> <restitution_coefficient>0</restitution_coefficient> <threshold>1e6</threshold> </bounce>
+      <contact> <ode> <kp>10000000.0</kp> <kd>1.0</kd> <min_depth>0.01</min_depth> </ode> </contact>
+    </surface>
+     <max_contacts>64</max_contacts>
+  </collision>
+   <sensor name="rear_left_bumper" type="contact">
+     <always_on>true</always_on> <update_rate>50</update_rate> <visualize>true</visualize>
+     <topic>/limo/rear_left_wheel_contact</topic> <gz_frame_id>rear_left_wheel_link</gz_frame_id>
+     <contact> <collision>rear_left_wheel_link_collision</collision> </contact>
+   </sensor>
+</link>
+<joint name="rear_left_wheel" type="revolute">
+  <parent>base_link</parent> <child>rear_left_wheel_link</child>
+  <axis> <xyz>0 1 0</xyz> <limit> <effort>20</effort> </limit> </axis>
+</joint>
+
+<!-- Rear Right Wheel -->
+<link name="rear_right_wheel_link">
+   <pose relative_to="base_link">-0.1 -0.065 -0.10 3.14159 0 0</pose>
+   <inertial>
+    <mass>0.5</mass> <pose>0 0 0 0 0 0</pose>
+    <inertia> <ixx>0.01055</ixx> <iyy>0.00075</iyy> <izz>0.01055</izz> </inertia>
+  </inertial>
+  <visual name="rear_right_wheel_visual">
+    <!-- ***** REPLACED MESH WITH CYLINDER ***** -->
+    <!-- Using collision pose for visual alignment -->
+    <pose>0 0.0225 0 1.57 0 0</pose>
+    <geometry>
+        <!-- Using collision cylinder dimensions -->
+        <cylinder><length>0.045</length><radius>0.045</radius></cylinder>
+    </geometry>
+    <material>
+        <ambient>0.2 0.2 0.2 1</ambient>
+        <diffuse>0.3 0.3 0.3 1</diffuse>
+        <specular>0.01 0.01 0.01 1</specular>
+    </material>
+  </visual>
+  <collision name="rear_right_wheel_link_collision">
+    <pose>0 0.0225 0 1.57 0 0</pose>
+    <geometry> <cylinder><length>0.045</length><radius>0.045</radius></cylinder> </geometry>
+    <surface>
+      <friction> <ode> <mu>100</mu> <mu2>100</mu2> <fdir1>1 0 0</fdir1> </ode> </friction>
+      <bounce> <restitution_coefficient>0</restitution_coefficient> <threshold>1e6</threshold> </bounce>
+      <contact> <ode> <kp>10000000.0</kp> <kd>1.0</kd> <min_depth>0.01</min_depth> </ode> </contact>
+    </surface>
+     <max_contacts>64</max_contacts>
+  </collision>
+   <sensor name="rear_right_bumper" type="contact">
+     <always_on>true</always_on> <update_rate>50</update_rate> <visualize>true</visualize>
+     <topic>/limo/rear_right_wheel_contact</topic> <gz_frame_id>rear_right_wheel_link</gz_frame_id>
+     <contact> <collision>rear_right_wheel_link_collision</collision> </contact>
+   </sensor>
+</link>
+<joint name="rear_right_wheel" type="revolute">
+  <parent>base_link</parent> <child>rear_right_wheel_link</child>
+  <axis> <xyz>0 -1 0</xyz> <limit> <effort>20</effort> </limit> </axis>
+</joint>
+
+<!-- Gazebo Fortress Plugins -->
+<plugin
+  filename="gz-sim-diff-drive-system"
+  name="gz::sim::systems::DiffDrive">
+  <left_joint>front_left_wheel</left_joint>
+  <left_joint>rear_left_wheel</left_joint>
+  <right_joint>front_right_wheel</right_joint>
+  <right_joint>rear_right_wheel</right_joint>
+  <wheel_separation>0.172</wheel_separation>
+  <wheel_radius>0.045</wheel_radius>
+  <max_linear_acceleration>0.045</max_linear_acceleration>
+  <odom_publisher_frequency>50</odom_publisher_frequency>
+  <topic>/cmd_vel</topic>
+  <odom_topic>odom</odom_topic>
+  <tf_topic>/tf</tf_topic>
+  <frame_id>odom</frame_id>
+  <child_frame_id>base_link</child_frame_id>
+</plugin>
+
+ <plugin
+   filename="gz-sim-joint-state-publisher-system"
+   name="gz::sim::systems::JointStatePublisher">
+   <topic>/joint_states</topic>
+   <joint_name>front_left_wheel</joint_name>
+   <joint_name>front_right_wheel</joint_name>
+   <joint_name>rear_left_wheel</joint_name>
+   <joint_name>rear_right_wheel</joint_name>
+ </plugin>
+
+  </model>
+</sdf>

@@ -299,3 +299,6 @@ dmypy.json
 cython_debug/
 
 !src/**
+
+src/gazebo_ros_pkgs
+gazebo_ros_pkgs.repos
