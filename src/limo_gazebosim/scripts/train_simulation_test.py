@@ -317,6 +317,15 @@ def main(args=None):
                 # compute reward: encourage reducing distance
                 new_dist, _ = env.get_distance_and_angle_to_goal()
                 reward = prev_dist - new_dist
+                # angle-based reward shaping
+                reward += 0.1 * (1 - abs(ang) / math.pi)
+                # obstacle avoidance penalty
+                if lidar:
+                    min_range = min(lidar)
+                    if min_range < 0.3:
+                        reward -= 0.5 * (0.3 - min_range)
+                # time step penalty to encourage faster completion
+                reward -= 0.01
                 # big reward for reaching goal
                 if new_dist < 0.5:
                     reward += 100.0
