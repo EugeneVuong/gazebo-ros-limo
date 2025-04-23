@@ -267,7 +267,7 @@
     <sensor name="sensor_camera" type="depth">
       <!-- <pose>0.0 0.0 0.0 0.0 0.0 0.0</pose> -->
       <always_on>0</always_on>
-      <update_rate>1</update_rate>
+      <update_rate>30</update_rate>
       <camera name="limo_camera">
         <!-- Camera-specific configurations -->
       </camera>
