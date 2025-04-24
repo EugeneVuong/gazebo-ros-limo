@@ -20,5 +20,10 @@
       <name>table2</name>
       <pose>-3 5 0 0 0 1.57</pose>
     </include>
+    <include>
+      <uri>model://person_standing</uri>
+      <name>person</name>
+      <pose>3 0 0 0 0 0</pose>
+    </include>
   </world>
 </sdf>

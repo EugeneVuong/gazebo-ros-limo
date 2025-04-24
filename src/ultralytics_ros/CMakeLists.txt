@@ -28,10 +28,12 @@ find_package(PCL REQUIRED)
 
 rosidl_generate_interfaces(${PROJECT_NAME}
   "msg/YoloResult.msg"
+  "msg/YoloLocalization.msg"
   DEPENDENCIES
   sensor_msgs
   std_msgs
   vision_msgs
+  geometry_msgs
 )
 
 include_directories(include)
@@ -64,6 +66,7 @@ install(TARGETS
 
 install(PROGRAMS
   script/tracker_node.py
+  script/object_localizer_node.py
   DESTINATION lib/${PROJECT_NAME}
 )
 

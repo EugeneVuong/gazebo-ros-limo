@@ -21,7 +21,7 @@
 TrackerWithCloudNode::TrackerWithCloudNode() : rclcpp::Node("tracker_with_cloud_node")
 {
   this->declare_parameter<std::string>("camera_info_topic", "camera_info");
-  this->declare_parameter<std::string>("lidar_topic", "points_raw");
+  this->declare_parameter<std::string>("lidar_topic", "/scan");
   this->declare_parameter<std::string>("yolo_result_topic", "yolo_result");
   this->declare_parameter<std::string>("yolo_3d_result_topic", "yolo_3d_result");
   this->declare_parameter<float>("cluster_tolerance", 0.5);
