@@ -63,20 +63,30 @@ class ObjectLocalizerNode(Node):
                 cx = int(detection.bbox.center.position.x)
                 cy = int(detection.bbox.center.position.y)
                 
+                # Get bounding box dimensions
+                bbox_width = int(detection.bbox.size_x)
+                bbox_height = int(detection.bbox.size_y)
+                
                 # Get the class and confidence
                 class_id = detection.results[0].hypothesis.class_id
                 confidence = detection.results[0].hypothesis.score
                 
-                # Get a small region around the detection center to find best depth value
-                x_min = max(cx - 2, 0)
-                x_max = min(cx + 3, depth_image.shape[1])
-                y_min = max(cy - 2, 0)
-                y_max = min(cy + 3, depth_image.shape[0])
+                # Calculate sampling region size based on bbox dimensions (20% of bbox dimensions)
+                sample_width = max(int(bbox_width * 0.2), 3)
+                sample_height = max(int(bbox_height * 0.2), 3)
+                
+                # Get a region around the detection center to find best depth value
+                x_min = max(cx - sample_width // 2, 0)
+                x_max = min(cx + (sample_width - sample_width // 2), depth_image.shape[1])
+                y_min = max(cy - sample_height // 2, 0)
+                y_max = min(cy + (sample_height - sample_height // 2), depth_image.shape[0])
                 
                 # Extract depth values in region and filter out zeros and nans
-                depth_region = depth_image[y_min:y_max, x_min:x_max]
-                valid_depths = depth_region[np.nonzero(depth_region)]
-                valid_depths = valid_depths[~np.isnan(valid_depths)]
+                depth_region = depth_image[y_min:y_max, x_min:x_max].copy()
+                
+                # Create a mask for valid depth values
+                valid_mask = (depth_region > 0.01) & (~np.isnan(depth_region)) & (depth_region < 10.0)
+                valid_depths = depth_region[valid_mask]
                 
                 # If we have valid depth values
                 if valid_depths.size > 0:
@@ -84,16 +94,26 @@ class ObjectLocalizerNode(Node):
                     depth_value = float(np.median(valid_depths))
                     
                     # Skip if depth is too large (likely invalid)
-                    if depth_value > 10.0:
+                    if depth_value > 10.0 or depth_value < 0.01:
                         continue
                     
-                    # Calculate 3D coordinates (simple pinhole model)
-                    # Assuming depth camera's focal length and center point
-                    # These would ideally come from camera info
-                    fx = float(depth_image.shape[1] / 2)  # approximate focal length
-                    fy = float(depth_image.shape[0] / 2)  # approximate focal length
-                    cx_offset = float(depth_image.shape[1] / 2)  # principal point x
-                    cy_offset = float(depth_image.shape[0] / 2)  # principal point y
+                    # Try to get the camera info to use real camera parameters
+                    # For now, estimate based on typical depth camera parameters
+                    # Assuming field of view of 65 degrees horizontal, 40 degrees vertical
+                    img_width = depth_image.shape[1]
+                    img_height = depth_image.shape[0]
+                    
+                    # Calculate focal length based on assumed field of view (65° horizontal)
+                    horizontal_fov_rad = math.radians(65.0)
+                    fx = float(img_width / (2 * math.tan(horizontal_fov_rad / 2)))
+                    
+                    # Assume similar vertical field of view scaling
+                    vertical_fov_rad = math.radians(40.0)
+                    fy = float(img_height / (2 * math.tan(vertical_fov_rad / 2)))
+                    
+                    # Principal point is typically the center of the image
+                    cx_offset = float(img_width / 2)
+                    cy_offset = float(img_height / 2)
                     
                     # Convert from pixel coordinates to camera coordinates
                     x = float((cx - cx_offset) * depth_value / fx)
