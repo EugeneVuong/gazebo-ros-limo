@@ -67,6 +67,7 @@ install(TARGETS
 install(PROGRAMS
   script/tracker_node.py
   script/object_localizer_node.py
+  script/object_transform_node.py
   DESTINATION lib/${PROJECT_NAME}
 )
 
